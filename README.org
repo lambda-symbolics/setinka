@@ -1,0 +1,155 @@
+#+TITLE: setinka
+#+STARTUP: content
+
+=setinka= keeps a program's settings as typed, documented CLOS objects and
+their values in layered configurations. A setting knows how to read text
+from an environment variable or a settings page, what it accepts, what it
+offers, and how to show itself. A configuration takes each value from the
+first source that supplies one, persists user choices through a replaceable
+store, tells listeners about changes, and keeps dependent settings in line
+when the settings they depend on change.
+
+* Defining settings
+
+#+BEGIN_SRC lisp
+(setinka:define-setting :compaction-percent (setinka:integer-setting)
+  :label "Compaction threshold"
+  :documentation "The context window percentage that triggers compaction."
+  :scope :durable
+  :environment "MYAPP_COMPACTION_PERCENT"
+  :minimum 1
+  :maximum 95
+  :default 80)
+
+(setinka:define-setting :model (setinka:choice-setting)
+  :label "Model"
+  :type 'string
+  :scope :durable
+  :deferrable-p t
+  :options (lambda (configuration)
+             (declare (ignore configuration))
+             (provider-model-names))
+  :default "default-model")
+
+(setinka:define-setting :effort (setinka:choice-setting)
+  :label "Reasoning effort"
+  :type 'string
+  :scope :durable
+  :deferrable-p t
+  :depends-on '(:model)
+  :options (lambda (configuration)
+             (model-efforts (setinka:config :model configuration)))
+  :validator (lambda (effort configuration)
+               (unless (supported-effort-p effort configuration)
+                 (format nil "~A does not support ~A."
+                         (setinka:config :model configuration) effort)))
+  :default "high")
+#+END_SRC
+
+The kinds are =boolean-setting= (on, off, true, false, yes, no, 1, 0),
+=integer-setting= (with optional bounds), =string-setting=,
+=pathname-setting=, =choice-setting= (one of its options, matching keyword
+options case-insensitively), =derived-setting= (computed by =:function= on
+every read and never stored), and the plain =setting=, which checks only its
+=:type=.
+
+Values that cannot be fixed when the program is written are delegates:
+
+- =:default= :: a value, or a function of the configuration returning one.
+- =:options= :: a list, or a function of the configuration returning the
+  permitted values, for example a provider's current model list.
+- =:validator= :: a function of a value and the configuration returning
+  =NIL= when the value is acceptable or a message saying why not.
+- =:depends-on= :: setting names whose changes may invalidate this setting.
+  After one of them is stored, =SETTING-RECONCILE= runs; a choice that is no
+  longer offered becomes the first option, stored with the source of the
+  change that caused it.
+- =:deferrable-p= :: options and validator wait while a configuration defers
+  validation, for settings checked against something assembled later, such
+  as providers registered by user initialization code.
+
+Behavior beyond the delegates is a subclass specializing =SETTING-COERCE=,
+=SETTING-VALIDATE=, =SETTING-OPTIONS=, =SETTING-RENDER-VALUE= or
+=SETTING-RECONCILE=. =SETTING-REJECT= signals the =SETTING-INVALID= a
+method should signal.
+
+The scope says where a value lives: =:process= values come from overrides,
+the environment, or defaults; =:durable= values persist through the store;
+=:session= values may change but are forgotten at exit; =:derived= values are
+computed. =:label=, =:group=, =:documentation= and =:visible-p= describe the
+setting for a settings page.
+
+* Registries
+
+=DEFINE-SETTING= registers into =*SETTINGS*= unless given another registry,
+=(define-setting :name (integer-setting :registry *my-settings*) ...)=. A
+redefinition replaces the setting and keeps its position, and
+=SETTINGS-LIST= returns settings in definition order. An application may use
+=*SETTINGS*=; a library should make its own with =MAKE-SETTING-REGISTRY= so
+its names cannot collide with an application's.
+
+* Configurations
+
+#+BEGIN_SRC lisp
+(let ((configuration (setinka:configuration-load :store (make-instance 'my-store))))
+  (setinka:config :compaction-percent configuration)        ; => 80
+  (setf (setinka:config :compaction-percent configuration) "70")
+  (setinka:configuration-setting-source configuration :compaction-percent)) ; => :SESSION
+#+END_SRC
+
+=CONFIGURATION-LOAD= takes each setting from, in order, its =:overrides=
+entry, its environment variable, the store's durable value, and its default.
+A durable value that no longer validates is dropped, and process settings
+left at their defaults are validated so a default the host cannot honor
+fails at load. =MAKE-CONFIGURATION= holds only overrides over defaults, for
+tests and children, and =CONFIGURATION-COPY= derives a configuration that
+starts with another's values but keeps its own listeners. A configuration
+snapshots its registry, so later definitions do not change it.
+
+=CONFIG= and =(SETF CONFIG)= read and write a setting of the given
+configuration, or of =*CONFIGURATION*=, or of the configuration returned by
+=*CONFIGURATION-DEFAULT-FUNCTION*=. Writing coerces and validates the value,
+stores it as a =:session= value, persists it when the setting is durable,
+calls each listener added with =CONFIGURATION-ADD-LISTENER= with the
+configuration, the setting, and the old and new values, and reconciles
+dependent settings. =CONFIGURATION-UNSET= returns a setting to its default and
+=CONFIGURATION-PERSIST= writes a durable setting's current value explicitly.
+
+* Deferred validation
+
+A configuration made with =:validation-deferred-p t= accepts values of
+deferrable settings without consulting their options or validators, and
+postpones reconciliation. =CONFIGURATION-VALIDATE-DEFERRED= ends the
+deferral and checks each deferrable setting in definition order: a failing
+durable value is forgotten so the default applies, a failing default of a
+setting with dependencies waits for the next reconciliation, and any other
+failure signals.
+
+* Stores
+
+A store is a =SETTING-STORE= subclass with methods on =STORE-READ-VALUES=,
+returning the durable values as a =(name value ...)= plist, and
+=STORE-WRITE-VALUE=, which should merge one value into what the store
+already holds. Both receive the configuration, so a store can find its file
+from a configuration directory setting. Configurations use
+=*CONFIGURATION-STORE*= unless constructed with =:store=; with no store,
+durable values stay in memory.
+
+* Conditions
+
+Every condition is a =SETTING-ERROR= with a =SETTING-ERROR-MESSAGE=.
+=SETTING-UNKNOWN= names an unknown setting, =SETTING-INVALID= carries the
+refused setting and value, =SETTING-READ-ONLY= reports a write to a derived
+setting, and =CONFIGURATION-MISSING= reports =CONFIG= without a current
+configuration.
+
+* Development
+
+#+BEGIN_SRC sh
+./script/bootstrap
+./script/check
+#+END_SRC
+
+* License
+
+setinka is distributed under the COLL-Attribution license in =LICENSE.lisp=.
