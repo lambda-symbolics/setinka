@@ -174,12 +174,26 @@
   (configuration-tests--call-with-environment
    nil
    (lambda ()
-     (let* ((store (make-instance 'memory-store :values '(:level -5 :colour :green)))
+     (let* ((store (make-instance 'memory-store
+                                  :values '(:level -5 :family "large" :colour :green)))
             (configuration (configuration-load :registry (configuration-tests--registry)
                                                :store store)))
        (test-equal 1 (config :level configuration))
+       (test-equal nil (configuration-setting-source configuration :level))
+       (test-equal "large" (config :family configuration)
+                   :description "valid durable values beside a dropped one still apply")
        (test-equal :red (config :colour configuration)
                    :description "values of settings that are not durable are ignored")))))
+
+(define-test test-invalid-environment-values
+  (configuration-tests--call-with-environment
+   "many"
+   (lambda ()
+     (let ((condition (test-signals setting-invalid
+                        (configuration-load :registry (configuration-tests--registry)
+                                            :store nil))))
+       (test-equal "Level must be an integer, not \"many\"."
+                   (princ-to-string condition))))))
 
 (define-test test-unknown-override-names
   (test-signals setting-unknown
