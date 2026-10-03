@@ -13,7 +13,10 @@
                              (:file "conditions")
                              (:file "classes")
                              (:file "setting")
-                             (:file "registry"))))
+                             (:file "registry")
+                             (:file "store")
+                             (:file "configuration")
+                             (:file "construction"))))
   :in-order-to ((asdf:test-op (asdf:test-op #:setinka/tests))))
 
 (asdf:defsystem #:setinka/tests
@@ -24,6 +27,7 @@
                 :serial t
                 :components ((:file "test-support")
                              (:file "setting-tests")
+                             (:file "configuration-tests")
                              (:file "tests"))))
   :perform (asdf:test-op (operation component)
              (declare (ignore operation component))
