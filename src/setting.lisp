@@ -57,6 +57,13 @@ setting it just stored, passing the SOURCE that change was stored with."))
       (setting-reject setting value "~A must be an integer, not ~S."
                       (setting-label setting) value))))
 
+(defmethod setting-coerce ((setting real-setting) (value string) configuration)
+  "Parse VALUE as an optionally signed decimal: an integer, else a single float."
+  (declare (ignore configuration))
+  (or (setting--parse-decimal value)
+      (setting-reject setting value "~A must be a decimal number, not ~S."
+                      (setting-label setting) value)))
+
 (defmethod setting-coerce ((setting pathname-setting) (value string) configuration)
   "Parse VALUE as a pathname."
   (declare (ignore configuration))
@@ -106,7 +113,7 @@ the check while CONFIGURATION defers validation."
                         (setting-render-value setting value)))))
   nil)
 
-(defmethod setting-validate ((setting integer-setting) value configuration)
+(defmethod setting-validate ((setting number-setting) value configuration)
   "Require VALUE to fall within SETTING's bounds."
   (call-next-method)
   (let ((minimum (setting-minimum setting))
@@ -114,12 +121,12 @@ the check while CONFIGURATION defers validation."
     (when (or (and minimum (< value minimum))
               (and maximum (> value maximum)))
       (setting-reject setting value
-                      "~A must be ~@[at least ~D~]~@[ and ~*~]~@[at most ~D~], not ~D."
+                      "~A must be ~@[at least ~A~]~@[ and ~*~]~@[at most ~A~], not ~A."
                       (setting-label setting)
-                      minimum
+                      (and minimum (setting-render-value setting minimum))
                       (and minimum maximum)
-                      maximum
-                      value)))
+                      (and maximum (setting-render-value setting maximum))
+                      (setting-render-value setting value))))
   nil)
 
 
@@ -161,6 +168,12 @@ the check while CONFIGURATION defers validation."
   (declare (ignore setting))
   (if value "on" "off"))
 
+(defmethod setting-render-value ((setting real-setting) value)
+  "Show a ratio as the decimal a person would type for it."
+  (if (typep value 'ratio)
+      (call-next-method setting (float value 1.0))
+      (call-next-method)))
+
 
 ;;;; -- Public Functions --
 
@@ -197,6 +210,32 @@ the check while CONFIGURATION defers validation."
   (and (setting-deferrable-p setting)
        (typep configuration 'configuration)
        (configuration-validation-deferred-p configuration)))
+
+(-> setting--parse-decimal (string) (or null real))
+(defun setting--parse-decimal (text)
+  "Return the real TEXT writes as an optionally signed decimal, or NIL.
+
+Digits without a point give an integer; a fraction gives a single float. The
+Lisp reader is never involved, so no other syntax is accepted."
+  (let* ((trimmed (string-trim '(#\Space #\Tab) text))
+         (negative-p (and (plusp (length trimmed)) (char= (char trimmed 0) #\-)))
+         (start (if (and (plusp (length trimmed)) (find (char trimmed 0) "+-")) 1 0))
+         (point (position #\. trimmed :start start))
+         (whole (subseq trimmed start (or point (length trimmed))))
+         (fraction (if point (subseq trimmed (1+ point)) "")))
+    (flet ((digits-p (string)
+             (every (lambda (character) (char<= #\0 character #\9)) string)))
+      (when (and (digits-p whole)
+                 (digits-p fraction)
+                 (plusp (length whole))
+                 (or (null point) (plusp (length fraction))))
+        (let ((magnitude (if point
+                             (float (+ (parse-integer whole)
+                                       (/ (parse-integer fraction)
+                                          (expt 10 (length fraction))))
+                                    1.0)
+                             (parse-integer whole))))
+          (if negative-p (- magnitude) magnitude))))))
 
 (-> setting--option-acceptable-p (setting t list) boolean)
 (defun setting--option-acceptable-p (setting value options)

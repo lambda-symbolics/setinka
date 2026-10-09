@@ -47,7 +47,8 @@ when the settings they depend on change.
 #+END_SRC
 
 The kinds are =boolean-setting= (on, off, true, false, yes, no, 1, 0),
-=integer-setting= (with optional bounds), =string-setting=,
+=integer-setting= and =real-setting= (with optional bounds; reals are written
+as plain decimals), =string-setting=,
 =pathname-setting=, =choice-setting= (one of its options, matching keyword
 options case-insensitively), =derived-setting= (computed by =:function= on
 every read and never stored), and the plain =setting=, which checks only its

@@ -72,6 +72,22 @@
     (test-equal "a/b" (setting-render-value path #p"a/b"))
     (test-equal "unset" (setting-render-value path nil))))
 
+(define-test test-real-settings
+  (let ((seconds (make-instance 'real-setting
+                                :name :seconds
+                                :label "Seconds"
+                                :minimum 0
+                                :maximum 60)))
+    (dolist (case '((" 3.5 " 3.5) ("2" 2) ("0.25" 0.25) ("+1.5" 1.5) ("60" 60)))
+      (test-equal (second case) (setting-parse seconds (first case) nil)))
+    (dolist (text '("" "abc" "1." ".5" "1e3" "#.(error)" "1/2" "-0.5" "60.5"))
+      (test-assert (setting-tests--rejects-p seconds text) text))
+    (test-equal "Seconds must be at least 0 and at most 60, not 60.5."
+                (princ-to-string (test-signals setting-invalid
+                                   (setting-parse seconds "60.5" nil))))
+    (test-equal "0.5" (setting-render-value seconds 1/2))
+    (test-equal "3.5" (setting-render-value seconds 3.5))))
+
 (define-test test-validator-delegates
   (let ((even (make-instance 'integer-setting
                              :name :even

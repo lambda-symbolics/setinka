@@ -23,7 +23,9 @@
    #:setting-deferrable-p
    #:boolean-setting
    #:choice-setting
+   #:number-setting
    #:integer-setting
+   #:real-setting
    #:setting-minimum
    #:setting-maximum
    #:string-setting

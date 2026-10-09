@@ -107,21 +107,30 @@ configuration, such as a registry of providers loaded by user code."))
   ()
   (:documentation "A setting whose value is one of its options."))
 
-(defclass integer-setting (setting)
+(defclass number-setting (setting)
   ((minimum
     :initarg :minimum
     :initform nil
     :reader setting-minimum
-    :type (or null integer)
+    :type (or null real)
     :documentation "The smallest permitted value, when bounded.")
    (maximum
     :initarg :maximum
     :initform nil
     :reader setting-maximum
-    :type (or null integer)
+    :type (or null real)
     :documentation "The largest permitted value, when bounded."))
+  (:documentation "A setting holding an optionally bounded number."))
+
+(defclass integer-setting (number-setting)
+  ()
   (:default-initargs :type 'integer)
   (:documentation "A setting holding an optionally bounded integer."))
+
+(defclass real-setting (number-setting)
+  ()
+  (:default-initargs :type 'real)
+  (:documentation "A setting holding an optionally bounded real, written as a decimal."))
 
 (defclass string-setting (setting)
   ()
