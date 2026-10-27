@@ -25,21 +25,21 @@
 
 (define-test test-choice-settings
   (let ((keyword-choice (make-instance 'choice-setting
-                                       :name :mode
-                                       :label "Mode"
-                                       :type 'keyword
+                                       :name    :mode
+                                       :label   "Mode"
+                                       :type    'keyword
                                        :options '(:ask :auto)))
-        (computed (make-instance 'choice-setting
-                                 :name :computed
-                                 :label "Computed"
-                                 :type 'string
-                                 :options (lambda (configuration)
-                                            (list "low" configuration))))
-        (optional (make-instance 'choice-setting
-                                 :name :optional
-                                 :label "Optional"
-                                 :type '(or null keyword)
-                                 :options '(:one))))
+        (computed       (make-instance 'choice-setting
+                                       :name    :computed
+                                       :label   "Computed"
+                                       :type    'string
+                                       :options (lambda (configuration)
+                                                  (list "low" configuration))))
+        (optional       (make-instance 'choice-setting
+                                       :name    :optional
+                                       :label   "Optional"
+                                       :type    '(or null keyword)
+                                       :options '(:one))))
     (test-equal :auto (setting-parse keyword-choice "Auto" nil))
     (test-assert (setting-tests--rejects-p keyword-choice "sandbox"))
     (test-equal "ask" (setting-render-value keyword-choice :ask))
@@ -57,11 +57,11 @@
 
 (define-test test-integer-and-pathname-settings
   (let ((bounded (make-instance 'integer-setting
-                                :name :percent
-                                :label "Percent"
+                                :name    :percent
+                                :label   "Percent"
                                 :minimum 1
                                 :maximum 95))
-        (path (make-instance 'pathname-setting :name :path :label "Path")))
+        (path    (make-instance 'pathname-setting :name :path :label "Path")))
     (test-equal 80 (setting-parse bounded " 80 " nil))
     (dolist (text '("0" "96" "abc" "1.5"))
       (test-assert (setting-tests--rejects-p bounded text) text))
@@ -74,8 +74,8 @@
 
 (define-test test-real-settings
   (let ((seconds (make-instance 'real-setting
-                                :name :seconds
-                                :label "Seconds"
+                                :name    :seconds
+                                :label   "Seconds"
                                 :minimum 0
                                 :maximum 60)))
     (dolist (case '((" 3.5 " 3.5) ("2" 2) ("0.25" 0.25) ("+1.5" 1.5) ("60" 60)))
@@ -90,8 +90,8 @@
 
 (define-test test-validator-delegates
   (let ((even (make-instance 'integer-setting
-                             :name :even
-                             :label "Even"
+                             :name      :even
+                             :label     "Even"
                              :validator (lambda (value configuration)
                                           (declare (ignore configuration))
                                           (and (oddp value)
@@ -101,10 +101,10 @@
                                                (setting-parse even "3" nil))))))
 
 (define-test test-defaults
-  (let ((plain (make-instance 'setting :name :plain :default 7))
-        (computed (make-instance 'setting
-                                 :name :computed
-                                 :default (lambda (configuration) (* 2 configuration))))
+  (let ((plain           (make-instance 'setting :name :plain :default 7))
+        (computed        (make-instance 'setting
+                                        :name    :computed
+                                        :default (lambda (configuration) (* 2 configuration))))
         (keyword-default (make-instance 'setting :name :keyword-default :default :auto)))
     (test-equal 7 (setting-default-value plain nil))
     (test-equal 42 (setting-default-value computed 21))
@@ -113,13 +113,13 @@
 (define-test test-registries
   (let ((registry (make-setting-registry)))
     (define-setting :first (boolean-setting :registry registry)
-      :label "First"
-      :default t)
+      :label               "First"
+      :default             t)
     (define-setting :second (integer-setting :registry registry)
-      :label "Second")
+      :label                "Second")
     (test-equal '(:first :second) (mapcar #'setting-name (settings-list registry)))
     (define-setting :first (boolean-setting :registry registry)
-      :label "First again")
+      :label               "First again")
     (test-equal '(:first :second) (mapcar #'setting-name (settings-list registry)))
     (test-equal "First again" (setting-label (find-setting :first registry)))
     (let ((condition (test-signals setting-unknown (find-setting :missing registry))))

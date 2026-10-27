@@ -198,7 +198,7 @@ the check while CONFIGURATION defers validation."
   "Signal SETTING-INVALID for VALUE, explained by CONTROL and ARGUMENTS."
   (error 'setting-invalid
          :setting setting
-         :value value
+         :value   value
          :message (apply #'format nil control arguments)))
 
 
@@ -217,12 +217,12 @@ the check while CONFIGURATION defers validation."
 
 Digits without a point give an integer; a fraction gives a single float. The
 Lisp reader is never involved, so no other syntax is accepted."
-  (let* ((trimmed (string-trim '(#\Space #\Tab) text))
+  (let* ((trimmed    (string-trim '(#\Space #\Tab) text))
          (negative-p (and (plusp (length trimmed)) (char= (char trimmed 0) #\-)))
-         (start (if (and (plusp (length trimmed)) (find (char trimmed 0) "+-")) 1 0))
-         (point (position #\. trimmed :start start))
-         (whole (subseq trimmed start (or point (length trimmed))))
-         (fraction (if point (subseq trimmed (1+ point)) "")))
+         (start      (if (and (plusp (length trimmed)) (find (char trimmed 0) "+-")) 1 0))
+         (point      (position #\. trimmed :start start))
+         (whole      (subseq trimmed start (or point (length trimmed))))
+         (fraction   (if point (subseq trimmed (1+ point)) "")))
     (flet ((digits-p (string)
              (every (lambda (character) (char<= #\0 character #\9)) string)))
       (when (and (digits-p whole)

@@ -20,8 +20,8 @@ nor STORE is read, which makes the result deterministic; STORE still receives
 later session changes to durable settings. The configuration keeps a
 snapshot of REGISTRY, so later definitions do not change it."
   (let ((configuration (make-instance 'configuration
-                                      :registry (setting-registry--snapshot registry)
-                                      :store store
+                                      :registry              (setting-registry--snapshot registry)
+                                      :store                 store
                                       :validation-deferred-p validation-deferred-p)))
     (configuration--apply-overrides configuration overrides)
     configuration))
@@ -40,8 +40,8 @@ stored values and their sources, and defers validation like it unless
 VALIDATION-DEFERRED-P says otherwise. Listeners stay with the original, so a
 copy made for a child or a task reacts only to its own changes."
   (let ((copy (make-instance 'configuration
-                             :registry (configuration-registry configuration)
-                             :store (configuration-store configuration)
+                             :registry              (configuration-registry configuration)
+                             :store                 (configuration-store configuration)
                              :validation-deferred-p validation-deferred-p)))
     (with-lock-held ((configuration-lock configuration))
       (maphash (lambda (name value)
@@ -77,8 +77,8 @@ A durable value that no longer validates is dropped. Every process setting
 left at its default is then validated, so a default the host cannot honor
 fails at load rather than at first use."
   (let ((configuration (make-instance 'configuration
-                                      :registry (setting-registry--snapshot registry)
-                                      :store store
+                                      :registry              (setting-registry--snapshot registry)
+                                      :store                 store
                                       :validation-deferred-p validation-deferred-p)))
     (configuration--check-override-names configuration overrides)
     (dolist (setting (configuration-setting-list configuration))
@@ -182,7 +182,7 @@ dependency is next stored. A failing explicit value always signals."
 (defun configuration--environment-value (setting)
   "Return SETTING's environment text and whether it holds more than whitespace."
   (let* ((variable (setting-environment setting))
-         (value (and variable (uiop:getenv variable))))
+         (value    (and variable (uiop:getenv variable))))
     (if (and value
              (find-if-not (lambda (character)
                             (member character '(#\Space #\Tab #\Newline #\Return #\Page)))

@@ -29,7 +29,7 @@ registry so its setting names cannot collide with an application's.")
   (or (with-lock-held ((setting-registry-lock registry))
         (values (gethash name (setting-registry-table registry))))
       (error 'setting-unknown
-             :name name
+             :name    name
              :message (format nil "Unknown setting ~S." name))))
 
 (-> settings-list (&optional setting-registry) list)

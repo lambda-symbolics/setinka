@@ -137,7 +137,7 @@ rather than left to the default."
     (unless (eq (setting-scope setting) ':durable)
       (error 'setting-invalid
              :setting setting
-             :value nil
+             :value   nil
              :message (format nil "~A is not a durable setting." (setting-label setting))))
     (when (configuration-store configuration)
       (store-write-value (configuration-store configuration) configuration name
@@ -148,7 +148,7 @@ rather than left to the default."
 (defun configuration-unset (configuration name)
   "Forget CONFIGURATION's stored value for NAME so its default applies again."
   (let* ((setting (configuration-setting configuration name))
-         (old (configuration-setting-value configuration setting)))
+         (old     (configuration-setting-value configuration setting)))
     (with-lock-held ((configuration-lock configuration))
       (remhash name (configuration-values configuration))
       (remhash name (configuration-sources configuration)))
