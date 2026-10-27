@@ -124,7 +124,8 @@ rather than left to the default."
                  (eq source ':session)
                  (configuration-store configuration))
         (store-write-value (configuration-store configuration) configuration
-                           (setting-name setting) coerced))
+                           (setting-name setting)
+                           :value coerced))
       (configuration--note-change configuration setting :old old :new coerced)
       (configuration--reconcile-dependents configuration setting source)
       coerced)))
@@ -140,7 +141,7 @@ rather than left to the default."
              :message (format nil "~A is not a durable setting." (setting-label setting))))
     (when (configuration-store configuration)
       (store-write-value (configuration-store configuration) configuration name
-                         (configuration-setting-value configuration setting))))
+                         :value (configuration-setting-value configuration setting))))
   nil)
 
 (-> configuration-unset (configuration symbol) null)

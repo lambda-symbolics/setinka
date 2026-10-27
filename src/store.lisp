@@ -10,7 +10,7 @@ CONFIGURATION is passed so a store may locate itself from other settings,
 such as a configuration directory. Names the registry does not know, and
 settings that are not durable, are ignored by the caller."))
 
-(defgeneric store-write-value (store configuration name value)
+(defgeneric store-write-value (store configuration name &key value)
   (:documentation
    "Persist VALUE under NAME in STORE for CONFIGURATION.
 

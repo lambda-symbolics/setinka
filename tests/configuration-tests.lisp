@@ -21,7 +21,7 @@
   (declare (ignore configuration))
   (copy-list (memory-store-values store)))
 
-(defmethod store-write-value ((store memory-store) configuration name value)
+(defmethod store-write-value ((store memory-store) configuration name &key value)
   "Merge NAME and VALUE into the held plist and record the write."
   (declare (ignore configuration))
   (setf (getf (memory-store-values store) name) value)
