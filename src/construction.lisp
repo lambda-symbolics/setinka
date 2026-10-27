@@ -157,14 +157,14 @@ dependency is next stored. A failing explicit value always signals."
 (-> configuration--plist-cell (symbol list) list)
 (defun configuration--plist-cell (name plist)
   "Return the tail of PLIST whose first element is the key NAME, or NIL."
-  (loop for tail on plist by #'cddr
+  (loop for tail on plist by (partial #'nthcdr 2)
         when (eq (first tail) name)
           return tail))
 
 (-> configuration--check-override-names (configuration list) null)
 (defun configuration--check-override-names (configuration overrides)
   "Signal SETTING-UNKNOWN for an OVERRIDES name CONFIGURATION does not know."
-  (loop for (name nil) on overrides by #'cddr
+  (loop for (name nil) on overrides by (partial #'nthcdr 2)
         do (configuration-setting configuration name))
   nil)
 

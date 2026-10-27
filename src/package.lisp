@@ -1,7 +1,8 @@
 (defpackage #:setinka
   (:use #:cl)
   (:import-from #:serapeum
-                #:->)
+                #:->
+                #:partial)
   (:import-from #:bordeaux-threads
                 #:make-lock
                 #:with-lock-held)
