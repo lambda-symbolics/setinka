@@ -125,7 +125,7 @@ rather than left to the default."
                  (configuration-store configuration))
         (store-write-value (configuration-store configuration) configuration
                            (setting-name setting) coerced))
-      (configuration--note-change configuration setting old coerced)
+      (configuration--note-change configuration setting :old old :new coerced)
       (configuration--reconcile-dependents configuration setting source)
       coerced)))
 
@@ -151,8 +151,9 @@ rather than left to the default."
     (with-lock-held ((configuration-lock configuration))
       (remhash name (configuration-values configuration))
       (remhash name (configuration-sources configuration)))
-    (configuration--note-change
-     configuration setting old (configuration-setting-value configuration setting)))
+    (configuration--note-change configuration setting
+                                :old old
+                                :new (configuration-setting-value configuration setting)))
   nil)
 
 (-> configuration-add-listener (configuration (or symbol function)) null)
@@ -203,8 +204,8 @@ options."
       (error 'configuration-missing
              :message "No configuration is current; pass one or bind *configuration*.")))
 
-(-> configuration--note-change (configuration setting t t) null)
-(defun configuration--note-change (configuration setting old new)
+(-> configuration--note-change (configuration setting &key (:old t) (:new t)) null)
+(defun configuration--note-change (configuration setting &key old new)
   "Tell CONFIGURATION's listeners that SETTING changed from OLD to NEW."
   (unless (equal old new)
     (dolist (listener (with-lock-held ((configuration-lock configuration))
