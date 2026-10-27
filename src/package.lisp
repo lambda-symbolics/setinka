@@ -1,4 +1,5 @@
 (defpackage #:setinka
+  (:documentation "Typed, documented, layered settings with durable stores and dependent values.")
   (:use #:cl)
   (:import-from #:serapeum
                 #:->
