@@ -8,8 +8,9 @@
 ;;; a qlot project in the per-user cache, named by a digest of the files in
 ;;; checks/, never below the checkout: ASDF's default source registry searches
 ;;; trees such as ~/common-lisp, and would find Mallet's vendored ASDF inside a
-;;; .qlot directory there. cheque follows its default branch and refreshes at
-;;; most hourly; the lock pins every other tool.
+;;; .qlot directory there. cheque follows its default branch: a new install
+;;; refreshes it at once and later checks at most hourly. The lock pins every
+;;; other tool.
 ;;;
 ;;; Usage: sbcl --script script/check-source.lisp [--fix] [--no-warnings] [--no-parinfer]
 
@@ -82,9 +83,9 @@ from this process's restricted one."
         (uiop:copy-file file (ensure-directories-exist (merge-pathnames (file-namestring file) tools))))
       (unless (check--run-qlot tools)
         (uiop:quit 2))
-      (check--touch installed)
-      (check--touch refreshed))
-    (when (> (- (get-universal-time) (file-write-date refreshed)) *check-refresh-seconds*)
+      (check--touch installed))
+    (when (or (not (probe-file refreshed))
+              (> (- (get-universal-time) (file-write-date refreshed)) *check-refresh-seconds*))
       (format t "~&Refreshing ~{~A~^, ~}.~%" *check-floating-tools*)
       (finish-output)
       (if (apply #'check--run-qlot tools *check-floating-tools*)
