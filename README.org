@@ -54,6 +54,13 @@ options case-insensitively), =derived-setting= (computed by =:function= on
 every read and never stored), and the plain =setting=, which checks only its
 =:type=.
 
+=integer-or-alias-setting= adds an =:aliases= alist of text names and native
+values, for example ='(("unlimited" . :unlimited))= or ='(("" . nil) ("off" . nil))=.
+Names match case-insensitively after trimming SP, TAB, LF, and CR. Other text
+must be a complete decimal integer. Native integers and declared alias values
+are accepted subject to =:type= and =:validator=; =:minimum= and =:maximum=
+apply to real numeric values. Each setting owns its aliases.
+
 Values that cannot be fixed when the program is written are delegates:
 
 - =:default= :: a value, or a function of the configuration returning one.

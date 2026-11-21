@@ -127,6 +127,16 @@ configuration, such as a registry of providers loaded by user code."))
   (:default-initargs :type 'integer)
   (:documentation "A setting holding an optionally bounded integer."))
 
+(defclass integer-or-alias-setting (integer-setting)
+  ((aliases
+    :initarg       :aliases
+    :initform      nil
+    :reader        setting-aliases
+    :type          list
+    :documentation "An alist mapping case-insensitive names to accepted native values."))
+  (:default-initargs :type t)
+  (:documentation "An optionally bounded integer or a value named by a caller-defined alias."))
+
 (defclass real-setting (number-setting)
   ()
   (:default-initargs :type 'real)

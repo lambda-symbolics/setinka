@@ -72,6 +72,48 @@
     (test-equal "a/b" (setting-render-value path #p"a/b"))
     (test-equal "unset" (setting-render-value path nil))))
 
+(define-test test-integer-or-alias-settings
+  (let ((bounded  (make-instance 'integer-or-alias-setting
+                                 :name    ':limit
+                                 :minimum 1
+                                 :maximum 9
+                                 :aliases '(("unlimited" . :unlimited) ("below" . 0))))
+        (optional (make-instance 'integer-or-alias-setting
+                                 :name    ':optional
+                                 :type    '(or null (integer 1))
+                                 :minimum 1
+                                 :aliases '(("" . nil) ("none" . nil)
+                                            ("off" . nil) ("unset" . nil)))))
+    (dolist (case '((1 1) (9 9) ("1" 1) ("+9" 9) (" 4 " 4)
+                    ("unlimited" :unlimited) ("UNLIMITED" :unlimited)
+                    (:unlimited :unlimited)))
+      (test-equal (second case) (setting-parse bounded (first case) nil)))
+    (test-equal ':unlimited
+                (setting-parse bounded
+                               (format nil " ~C~CUnLiMiTeD~C " #\Tab #\Newline #\Return)
+                               nil))
+    (test-equal 7 (setting-parse bounded
+                                (format nil "~C~C7~C " #\Return #\Newline #\Tab) nil))
+    (dolist (value '(0 -1 10 1.5 1/2 nil t :unknown "" "none" "off" "unset"
+                     "0" "-1" "10" "below" "abc" "1.5" "1/2" "1x" "1 2"
+                     "#x10" "#.(error)" "--1"))
+      (test-assert (setting-tests--rejects-p bounded value)))
+    (dolist (value '(nil "" "none" "OFF" "unset"))
+      (test-equal nil (setting-parse optional value nil)))
+    (test-equal nil (setting-parse optional (format nil "~CNoNe~C" #\Newline #\Return) nil))
+    (test-equal 12 (setting-parse optional "12" nil))
+    (dolist (value '(0 -1 2.5 t :unlimited "unlimited" "0" "-2" "2.5" "abc"))
+      (test-assert (setting-tests--rejects-p optional value))))
+  (let ((restricted (make-instance 'integer-or-alias-setting
+                                    :name      ':restricted
+                                    :aliases   '(("auto" . :auto))
+                                    :validator (lambda (value configuration)
+                                                 (declare (ignore configuration))
+                                                 (when (eq value ':auto) "Choose a count.")))))
+    (test-assert (setting-tests--rejects-p restricted "auto"))
+    (test-assert (setting-tests--rejects-p restricted ':auto))
+    (test-equal 3 (setting-parse restricted 3 nil))))
+
 (define-test test-real-settings
   (let ((seconds (make-instance 'real-setting
                                 :name    :seconds

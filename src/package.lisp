@@ -27,6 +27,8 @@
    #:choice-setting
    #:number-setting
    #:integer-setting
+   #:integer-or-alias-setting
+   #:setting-aliases
    #:real-setting
    #:setting-minimum
    #:setting-maximum

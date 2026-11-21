@@ -57,6 +57,14 @@ setting it just stored, passing the SOURCE that change was stored with."))
       (setting-reject setting value "~A must be an integer, not ~S."
                       (setting-label setting) value))))
 
+(defmethod setting-coerce ((setting integer-or-alias-setting) (value string) configuration)
+  "Read a decimal integer or an alias, trimming space, tab, line feed, and carriage return."
+  (let* ((text  (string-trim '(#\Space #\Tab #\Newline #\Return) value))
+         (alias (assoc text (setting-aliases setting) :test #'string-equal)))
+    (if alias
+        (rest alias)
+        (call-next-method setting text configuration))))
+
 (defmethod setting-coerce ((setting real-setting) (value string) configuration)
   "Parse VALUE as an optionally signed decimal: an integer, else a single float."
   (declare (ignore configuration))
@@ -118,8 +126,9 @@ the check while CONFIGURATION defers validation."
   (call-next-method)
   (let ((minimum (setting-minimum setting))
         (maximum (setting-maximum setting)))
-    (when (or (and minimum (< value minimum))
-              (and maximum (> value maximum)))
+    (when (and (realp value)
+               (or (and minimum (< value minimum))
+                   (and maximum (> value maximum))))
       (setting-reject setting value
                       "~A must be ~@[at least ~A~]~@[ and ~*~]~@[at most ~A~], not ~A."
                       (setting-label setting)
@@ -128,6 +137,14 @@ the check while CONFIGURATION defers validation."
                       (and maximum (setting-render-value setting maximum))
                       (setting-render-value setting value))))
   nil)
+
+(defmethod setting-validate ((setting integer-or-alias-setting) value configuration)
+  "Require an integer or a declared alias value before type, validator, and bounds checks."
+  (unless (or (integerp value)
+              (member value (setting-aliases setting) :key #'rest :test #'equal))
+    (setting-reject setting value "~A must be an integer or a declared alias, not ~S."
+                    (setting-label setting) value))
+  (call-next-method))
 
 
 ;;;; -- Options and Presentation --
